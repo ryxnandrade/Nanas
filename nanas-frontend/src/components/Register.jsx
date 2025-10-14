@@ -1,12 +1,13 @@
-import { useState } from 'react'
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
-import { auth } from '../firebase'
-import { Button } from '@/components/ui/button.jsx'
-import { Input } from '@/components/ui/input.jsx'
-import { Label } from '@/components/ui/label.jsx'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
-import { Eye, EyeOff, Wallet, Check } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth } from '../firebase';
+import { Button } from '@/components/ui/button.jsx';
+import { Input } from '@/components/ui/input.jsx';
+import { Label } from '@/components/ui/label.jsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx';
+import { Eye, EyeOff, Wallet, Check } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import ApiService from '../services/api';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -14,80 +15,64 @@ export default function Register() {
     email: '',
     password: '',
     confirmPassword: '',
-  })
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  const navigate = useNavigate()
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleRegister = async (e) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError('');
 
     if (formData.password !== formData.confirmPassword) {
-      setError('As senhas não coincidem!')
-      return
+      setError('As senhas não coincidem!');
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password)
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       await updateProfile(userCredential.user, {
         displayName: formData.name
-      })
+      });
 
-      const idToken = await userCredential.user.getIdToken()
+      const idToken = await userCredential.user.getIdToken();
 
-      const requestBody = {
-        idToken: idToken,
-        name: formData.name
-      };
-
+      // 2. Usar o ApiService para a chamada ao backend
       try {
-        const response = await fetch('http://localhost:8080/api/auth/verify-token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody)
-        });
-
-        if (response.ok) {
-          const userData = await response.json()
-          console.log('Usuário criado no backend:', userData)
-        } else {
-          console.error('Erro ao criar usuário no backend:', response.statusText)
-        }
+        const userData = await ApiService.login(idToken, formData.name);
+        console.log('Usuário criado no backend:', userData);
       } catch (backendError) {
-        console.error('Erro ao conectar com backend:', backendError)
+        console.error('Erro ao conectar com o backend:', backendError);
       }
 
-      navigate('/dashboard')
+      navigate('/dashboard');
     } catch (error) {
       if (error.code === 'auth/email-already-in-use') {
-        setError('Este email já está em uso.')
+        setError('Este email já está em uso.');
       } else if (error.code === 'auth/weak-password') {
-        setError('A senha deve ter pelo menos 6 caracteres.')
+        setError('A senha deve ter pelo menos 6 caracteres.');
       } else {
-        setError('Erro ao criar conta. Tente novamente.')
+        setError('Erro ao criar conta. Tente novamente.');
       }
-      console.error('Erro no cadastro:', error)
+      console.error('Erro no cadastro:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const passwordRequirements = [
     { text: 'Pelo menos 8 caracteres', met: formData.password.length >= 8 },
     { text: 'Pelo menos uma letra maiúscula', met: /[A-Z]/.test(formData.password) },
     { text: 'Pelo menos um número', met: /\d/.test(formData.password) },
-  ]
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
@@ -240,4 +225,3 @@ export default function Register() {
     </div>
   )
 }
-

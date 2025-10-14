@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.5</version>
+		<version>2.7.18</version>
 		<relativePath/>
 	</parent>
 	<groupId>com.nanas</groupId>
@@ -28,7 +28,10 @@
 	</scm>
 	<properties>
 		<java.version>11</java.version>
+		<lombok.version>1.18.30</lombok.version>
 	</properties>
+
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -46,6 +49,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+
 
 		<dependency>
 			<groupId>org.postgresql</groupId>
@@ -72,7 +76,12 @@
             <artifactId>firebase-admin</artifactId>
             <version>9.1.1</version>
         </dependency>
-    </dependencies>
+    		<dependency>
+			<groupId>jakarta.persistence</groupId>
+			<artifactId>jakarta.persistence-api</artifactId>
+			<version>2.2.3</version>
+		</dependency>
+	</dependencies>
 
 	<build>
 		<plugins>
@@ -84,6 +93,7 @@
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
+							<version>${lombok.version}</version>
 						</path>
 					</annotationProcessorPaths>
 				</configuration>

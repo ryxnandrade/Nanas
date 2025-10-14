@@ -9,10 +9,16 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransacaoResponse {
-    private Integer id;
-    private String description;
-    private BigDecimal amount;
-    private String type;
-    private String date;
+    private Long id;
+    private String descricao;
+    private BigDecimal valor;
+    private String tipo;
+    private String data;
+    private Long carteiraOrigemId;
+    private String carteiraOrigemNome;
+    private Long carteiraDestinoId;
+    private String carteiraDestinoNome;
+    private Long categoriaId;
+    private String categoriaNome;
 }
 

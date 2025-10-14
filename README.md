@@ -1,4 +1,4 @@
-# Nanas - Gerenciador Financeiro Pessoal
+# Nanas - Controle Financeiro
 
 ## 📝 Descrição do Projeto
 

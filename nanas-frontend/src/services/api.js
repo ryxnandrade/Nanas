@@ -1,66 +1,62 @@
 const API_BASE_URL = 'http://localhost:8080/api';
 
 class ApiService {
-  constructor( ) {
-    this.baseURL = API_BASE_URL;
+  constructor() {
+    this.baseURL = import.meta.env.VITE_API_BASE_URL + '/api';
     this.userId = null;
+    this.firebaseUid = null;
   }
 
-  setUserId(userId) {
-    this.userId = userId;
+  setUserData(userData) {
+    if (userData && userData.id) {
+      this.userId = userData.id;
+    } else {
+      console.error("Falha ao obter o ID numérico do usuário do backend.");
+    }
+
+    if (userData && userData.firebaseUid) {
+      this.firebaseUid = userData.firebaseUid;
+    } else {
+      console.error("Falha ao obter o Firebase UID do usuário do backend.");
+    }
   }
 
-  clearUserId() {
+  clearUserData() {
     this.userId = null;
+    this.firebaseUid = null;
   }
 
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
+    const headers = { 'Content-Type': 'application/json', ...options.headers };
 
-    const headers = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
-
-    if (this.userId) {
-      headers['user_id'] = this.userId;
+    if (this.firebaseUid) {
+      headers['user_id'] = this.firebaseUid;
     }
 
-    const config = {
-      ...options,
-      headers,
-    };
+    const config = { ...options, headers };
 
     try {
       const response = await fetch(url, config);
-
       if (!response.ok) {
         const errorData = await response.text();
-        throw new Error(errorData || `HTTP error! status: ${response.status}`);
+        throw new Error(`Falha na requisição para ${endpoint}: ${errorData || response.status}`);
       }
-
-      // Se a resposta for 204 (No Content), retorna null
-      if (response.status === 204) {
-        return null;
-      }
-
+      if (response.status === 204) return null;
       return await response.json();
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error(error);
       throw error;
     }
   }
 
-  // Auth endpoints
+  // Auth
   async login(idToken, name) {
     const userData = await this.request('/auth/verify-token', {
       method: 'POST',
       body: JSON.stringify({ idToken, name }),
     });
-    
-    if (userData && userData.firebaseUid) {
-      this.setUserId(userData.firebaseUid);
-    }
+    this.setUserData(userData);
     return userData;
   }
 
@@ -72,12 +68,14 @@ class ApiService {
   }
 
   // Carteiras endpoints
-  async getCarteiras() {
-    return this.request('/carteiras');
+ async getCarteiras() {
+    if (!this.firebaseUid) throw new Error("Firebase UID não definido.");
+    return this.request('/carteiras'); 
   }
 
-  async getCarteira(id) {
-    return this.request(`/carteiras/${id}`);
+  async getTransacoes() {
+    if (!this.firebaseUid) throw new Error("Firebase UID não definido.");
+    return this.request('/transacoes');
   }
 
   async createCarteira(carteiraData) {
@@ -166,52 +164,58 @@ class ApiService {
   }
 
   // Dashboard endpoints
-  async getDashboardData() {
-    try {
-      const [carteiras, transacoes, categorias] = await Promise.all([
-        this.getCarteiras(),
-        this.getTransacoes(),
-        this.getCategorias(),
-      ]);
-
-      // Calcular estatísticas
-      const saldoTotal = carteiras.reduce((total, carteira) => total + carteira.saldo, 0);
-      const receitas = transacoes
-        .filter(t => t.tipo === 'RECEITA')
-        .reduce((total, t) => total + t.valor, 0);
-      const despesas = transacoes
-        .filter(t => t.tipo === 'DESPESA')
-        .reduce((total, t) => total + t.valor, 0);
-
-      // Transações recentes (últimas 10)
-      const transacoesRecentes = transacoes
-        .sort((a, b) => new Date(b.data) - new Date(a.data))
-        .slice(0, 10);
-
-      // Estatísticas por categoria
-      const categoriaStats = categorias.map(categoria => {
-        const transacoesCategoria = transacoes.filter(t => t.categoriaId === categoria.id);
-        const total = transacoesCategoria.reduce((sum, t) => sum + t.valor, 0);
-        return {
-          ...categoria,
-          total,
-          transacoes: transacoesCategoria.length
-        };
-      });
-
-      return {
-        saldoTotal,
-        receitas,
-        despesas,
-        transacoesRecentes,
-        carteiras,
-        categorias: categoriaStats
-      };
-    } catch (error) {
-      console.error('Erro ao carregar dados do dashboard:', error);
-      throw error;
-    }
-  }
+ async getDashboardSummary() { 
+  if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+  return this.request(`/dashboard/summary?usuarioId=${this.userId}`);
 }
 
+async getDespesasPorCategoria() { 
+  if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+  return this.request(`/dashboard/despesas-por-categoria?usuarioId=${this.userId}`);
+}
+
+async getEvolucaoSaldo() { 
+  if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+  return this.request(`/dashboard/evolucao-saldo?usuarioId=${this.userId}`);
+}
+// Cartão de Crédito endpoints
+ async getCartoesCredito() {
+    if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+    return this.request(`/cartoes-credito/usuario/${this.userId}`);
+  }
+
+ async getCartoesCredito() {
+    if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+    return this.request(`/cartoes-credito/usuario/${this.userId}`);
+  }
+
+  async createCartaoCredito(cartaoCreditoData) {
+    if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+    const dataToSend = { ...cartaoCreditoData, usuarioId: this.userId };
+    return this.request('/cartoes-credito', {
+      method: 'POST',
+      body: JSON.stringify(dataToSend),
+    });
+  }
+
+  async getFaturaAtual(cartaoId) {
+    if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+    return this.request(`/faturas/cartao/${cartaoId}/atual?usuarioId=${this.userId}`);
+  }
+
+  async getProximaFatura(cartaoId) {
+    if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+    return this.request(`/faturas/cartao/${cartaoId}/proxima?usuarioId=${this.userId}`);
+  }
+
+
+async createTransacaoCartaoCredito(cartaoId, transacaoData) {
+  if (!this.userId) throw new Error("ID do usuário não definido.");
+  const dataToSend = { ...transacaoData, usuarioId: this.userId };
+  return this.request(`/usuarios/${this.userId}/cartoes-credito/${cartaoId}/transacoes`, {
+    method: 'POST',
+    body: JSON.stringify(dataToSend),
+  });
+}
+}
 export default new ApiService();

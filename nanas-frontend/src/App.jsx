@@ -4,6 +4,7 @@ import Register from './components/Register'
 import Dashboard from './components/Dashboard'
 import Despesas from './components/Despesas'
 import Carteiras from './components/Carteiras'
+import CartaoCredito from './components/CartaoCredito'
 import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
 
@@ -26,6 +27,11 @@ function App() {
       <Route path="/carteiras" element={
         <ProtectedRoute>
           <Carteiras />
+        </ProtectedRoute>
+      } />
+      <Route path="/cartao-credito" element={
+        <ProtectedRoute>
+          <CartaoCredito />
         </ProtectedRoute>
       } />
     </Routes>

@@ -42,7 +42,7 @@ A plataforma conta com um conjunto robusto de funcionalidades para um controle f
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## 🛠️ Tecnologias Utilizadas 
 
 O projeto foi construído com uma arquitetura moderna, separando o frontend do backend.
 

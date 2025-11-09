@@ -1,14 +1,15 @@
 package com.nanas.nanas.model;
 
-import com.nanas.nanas.model.enums.TipoCarteira; 
-import javax.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import javax.persistence.*;
 import java.math.BigDecimal;
 
-@Data
 @Entity
-@Table(name = "carteiras")
-public class Carteira extends BaseEntity {
+@Table(name = "cartoes_credito")
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class CartaoCredito extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,11 +17,11 @@ public class Carteira extends BaseEntity {
 
     private String nome;
 
-    private BigDecimal saldo;
+    private BigDecimal limite;
 
-    @Enumerated(EnumType.STRING) 
-    @Column(nullable = false) 
-    private TipoCarteira tipo;
+    private Integer diaFechamento;
+
+    private Integer diaVencimento;
 
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)

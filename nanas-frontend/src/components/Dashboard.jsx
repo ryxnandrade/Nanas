@@ -1,84 +1,196 @@
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Wallet, 
+"use client"
+
+import { useState, useEffect } from "react"
+import { motion } from "framer-motion"
+import {
+  Wallet,
   Calendar,
   DollarSign,
   ArrowUpCircle,
   ArrowDownCircle,
   Plus,
-  Activity,
-  PieChart,
   BarChart3,
-  AlertCircle
-} from 'lucide-react'
-import Layout from './Layout'
-import { AnimatedCard, AnimatedCardHeader, AnimatedCardContent, AnimatedCardTitle, AnimatedCardDescription } from './AnimatedCard'
-import { LoadingSpinner, LoadingCard } from './LoadingSpinner'
-import { Button } from './ui/button'
-import { Badge } from './ui/badge'
-import { cn } from '../lib/utils'
-import ApiService from '../services/api'
+  AlertCircle,
+  CreditCard,
+  Zap,
+} from "lucide-react"
+import Layout from "./Layout"
+import {
+  AnimatedCard,
+  AnimatedCardHeader,
+  AnimatedCardContent,
+  AnimatedCardTitle,
+  AnimatedCardDescription,
+} from "./AnimatedCard"
+import { LoadingCard } from "./LoadingSpinner"
+import { Button } from "./ui/button"
+import { cn } from "../lib/utils"
+import ApiService from "../services/api"
+import { useAuth } from "../hooks/useAuth"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
+import { ChartContainer, ChartTooltipContent } from "./ui/chart"
+import {
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts"
 
 const Dashboard = () => {
+  const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [dashboardData, setDashboardData] = useState({
+  const [summary, setSummary] = useState({
     saldoTotal: 0,
     receitas: 0,
     despesas: 0,
-    transacoesRecentes: [],
-    carteiras: [],
-    categorias: []
+    cartoes: 0,
+    receitasMesAnterior: 0,
+    despesasMesAnterior: 0,
   })
+  const [despesasPorCategoria, setDespesasPorCategoria] = useState([])
+  const [evolucaoSaldo, setEvolucaoSaldo] = useState([])
+  const [carteiras, setCarteiras] = useState([])
+  const [selectedWallet, setSelectedWallet] = useState("all")
 
   useEffect(() => {
-    loadDashboardData()
-  }, [])
+    if (user) {
+      loadDashboardData()
+    }
+  }, [user])
 
   const loadDashboardData = async () => {
     try {
       setLoading(true)
       setError(null)
-      const data = await ApiService.getDashboardData()
-      setDashboardData(data)
+
+      const [summaryData, despesasData, evolucaoData, carteirasData] = await Promise.all([
+        ApiService.getDashboardSummary(),
+        ApiService.getDespesasPorCategoria(),
+        ApiService.getEvolucaoSaldo(),
+        ApiService.getCarteiras(),
+      ])
+
+      setSummary(summaryData)
+      setDespesasPorCategoria(despesasData)
+      setEvolucaoSaldo(evolucaoData)
+      setCarteiras(carteirasData)
     } catch (error) {
-      console.error('Erro ao carregar dados do dashboard:', error)
-      setError('Erro ao carregar dados do dashboard. Verifique se o backend está rodando.')
+      console.error("Erro ao carregar dados do dashboard:", error)
+      setError("Erro ao carregar dados do dashboard. Verifique se o backend está rodando.")
     } finally {
       setLoading(false)
     }
   }
 
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
     }).format(value)
-  }
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('pt-BR')
-  }
-
-  const getTypeColor = (tipo) => {
-    switch (tipo) {
-      case 'RECEITA':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-      case 'DESPESA':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-      case 'TRANSFERENCIA':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
-    }
   }
 
   const calculatePercentageChange = (current, previous) => {
     if (previous === 0) return 0
     return ((current - previous) / previous) * 100
+  }
+
+  const getPercentageColor = (percentage) => {
+    if (percentage > 0) return "text-green-500"
+    if (percentage < 0) return "text-red-500"
+    return "text-gray-500"
+  }
+
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#AF19FF", "#FF1943"]
+
+  const PieChartWithCustomizedLabel = ({ data }) => {
+    const total = data.reduce((sum, entry) => sum + entry.valor, 0)
+
+    const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
+      const radius = innerRadius + (outerRadius - innerRadius) * 0.5
+      const x = cx + radius * Math.cos((-midAngle * Math.PI) / 180)
+      const y = cy + radius * Math.sin((-midAngle * Math.PI) / 180)
+
+      return (
+        <text
+          x={x}
+          y={y}
+          fill="white"
+          textAnchor={x > cx ? "start" : "end"}
+          dominantBaseline="central"
+          className="text-xs font-bold"
+        >
+          {`${(percent * 100).toFixed(0)}%`}
+        </text>
+      )
+    }
+
+    return (
+      <ResponsiveContainer width="100%" height={300}>
+        <PieChart>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            innerRadius={60}
+            outerRadius={100}
+            fill="#8884d8"
+            paddingAngle={5}
+            dataKey="valor"
+            nameKey="nome"
+            labelLine={false}
+            label={renderCustomizedLabel}
+          >
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip content={<ChartTooltipContent formatter={(value) => formatCurrency(value)} />} />
+          <Legend />
+        </PieChart>
+      </ResponsiveContainer>
+    )
+  }
+
+  const LineChartWithCustomTooltip = ({ data }) => {
+    const CustomTooltip = ({ active, payload, label }) => {
+      if (active && payload && payload.length) {
+        return (
+          <div className="bg-white/90 dark:bg-gray-800/90 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+            <p className="text-sm font-medium text-gray-900 dark:text-white">{label}</p>
+            <p className="text-sm text-green-600 dark:text-green-400">{`Saldo: ${formatCurrency(payload[0].value)}`}</p>
+          </div>
+        )
+      }
+      return null
+    }
+
+    return (
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart
+          data={data}
+          margin={{
+            top: 5,
+            right: 30,
+            left: 20,
+            bottom: 5,
+          }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
+          <XAxis dataKey="mesAno" stroke="#6b7280" className="dark:stroke-gray-400" />
+          <YAxis stroke="#6b7280" className="dark:stroke-gray-400" tickFormatter={formatCurrency} />
+          <Tooltip content={<CustomTooltip />} />
+          <Line type="monotone" dataKey="saldo" stroke="#8884d8" strokeWidth={2} dot={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    )
   }
 
   if (loading) {
@@ -106,12 +218,8 @@ const Dashboard = () => {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Erro ao carregar dados
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              {error}
-            </p>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Erro ao carregar dados</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
             <Button onClick={loadDashboardData} className="bg-blue-600 hover:bg-blue-700">
               Tentar Novamente
             </Button>
@@ -123,369 +231,226 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        {/* Header */}
+      <div className="space-y-8">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-primary/80 to-accent p-8 text-white shadow-2xl"
         >
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Dashboard
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Visão geral das suas finanças
-            </p>
+          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-3xl -z-0" />
+          <div className="relative z-10">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-4xl font-bold text-balance">Bem-vindo de volta! 👋</h1>
+                <p className="text-primary-foreground/80 mt-2 text-lg">
+                  Aqui está uma visão geral do seu patrimônio financeiro
+                </p>
+              </div>
+              <Button
+                className="bg-white text-primary hover:bg-gray-100 shadow-lg font-semibold"
+                onClick={() => (window.location.href = "/despesas")}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nova Transação
+              </Button>
+            </div>
           </div>
-          <Button 
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => window.location.href = '/despesas'}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nova Transação
-          </Button>
         </motion.div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <AnimatedCard delay={0.1} className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0">
-            <AnimatedCardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-green-100 text-sm font-medium">Saldo Total</p>
-                  <p className="text-3xl font-bold mt-1">
-                    {formatCurrency(dashboardData.saldoTotal)}
-                  </p>
-                  <p className="text-green-100 text-sm mt-2">
-                    {dashboardData.carteiras.length} carteira{dashboardData.carteiras.length !== 1 ? 's' : ''}
-                  </p>
-                </div>
-                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                  <DollarSign className="w-8 h-8" />
-                </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Total Balance */}
+          <AnimatedCard delay={0.1} className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+            <AnimatedCardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <AnimatedCardTitle className="text-sm font-semibold text-primary">Saldo Total</AnimatedCardTitle>
+              <div className="bg-primary/20 p-2 rounded-lg">
+                <DollarSign className="h-5 w-5 text-primary" />
               </div>
+            </AnimatedCardHeader>
+            <AnimatedCardContent>
+              <div className="text-3xl font-bold text-foreground">{formatCurrency(summary.saldoTotal)}</div>
+              <p className="text-xs text-muted-foreground mt-2">
+                {carteiras.length} carteira{carteiras.length !== 1 ? "s" : ""}
+              </p>
             </AnimatedCardContent>
           </AnimatedCard>
 
-          <AnimatedCard delay={0.2} className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
-            <AnimatedCardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100 text-sm font-medium">Receitas</p>
-                  <p className="text-3xl font-bold mt-1">
-                    {formatCurrency(dashboardData.receitas)}
-                  </p>
-                  <p className="text-blue-100 text-sm mt-2">
-                    Este período
-                  </p>
-                </div>
-                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                  <ArrowUpCircle className="w-8 h-8" />
-                </div>
+          {/* Revenue */}
+          <AnimatedCard delay={0.2} className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+            <AnimatedCardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <AnimatedCardTitle className="text-sm font-semibold text-green-600 dark:text-green-400">
+                Receitas
+              </AnimatedCardTitle>
+              <div className="bg-green-500/20 p-2 rounded-lg">
+                <ArrowUpCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
+            </AnimatedCardHeader>
+            <AnimatedCardContent>
+              <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                {formatCurrency(summary.receitas)}
+              </div>
+              <p
+                className={cn(
+                  "text-xs mt-2",
+                  getPercentageColor(calculatePercentageChange(summary.receitas, summary.receitasMesAnterior)),
+                )}
+              >
+                {calculatePercentageChange(summary.receitas, summary.receitasMesAnterior).toFixed(1)}% vs. mês passado
+              </p>
             </AnimatedCardContent>
           </AnimatedCard>
 
-          <AnimatedCard delay={0.3} className="bg-gradient-to-r from-red-500 to-red-600 text-white border-0">
-            <AnimatedCardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-red-100 text-sm font-medium">Despesas</p>
-                  <p className="text-3xl font-bold mt-1">
-                    {formatCurrency(dashboardData.despesas)}
-                  </p>
-                  <p className="text-red-100 text-sm mt-2">
-                    Este período
-                  </p>
-                </div>
-                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                  <ArrowDownCircle className="w-8 h-8" />
-                </div>
+          {/* Expenses */}
+          <AnimatedCard delay={0.3} className="bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
+            <AnimatedCardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <AnimatedCardTitle className="text-sm font-semibold text-red-600 dark:text-red-400">
+                Despesas
+              </AnimatedCardTitle>
+              <div className="bg-red-500/20 p-2 rounded-lg">
+                <ArrowDownCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
               </div>
+            </AnimatedCardHeader>
+            <AnimatedCardContent>
+              <div className="text-3xl font-bold text-red-600 dark:text-red-400">
+                {formatCurrency(summary.despesas)}
+              </div>
+              <p
+                className={cn(
+                  "text-xs mt-2",
+                  getPercentageColor(calculatePercentageChange(summary.despesasMesAnterior, summary.despesas)),
+                )}
+              >
+                {calculatePercentageChange(summary.despesasMesAnterior, summary.despesas).toFixed(1)}% vs. mês passado
+              </p>
+            </AnimatedCardContent>
+          </AnimatedCard>
+
+          {/* Credit Cards */}
+          <AnimatedCard delay={0.4} className="bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20">
+            <AnimatedCardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <AnimatedCardTitle className="text-sm font-semibold text-accent">Cartões</AnimatedCardTitle>
+              <div className="bg-accent/20 p-2 rounded-lg">
+                <CreditCard className="h-5 w-5 text-accent" />
+              </div>
+            </AnimatedCardHeader>
+            <AnimatedCardContent>
+              <div className="text-3xl font-bold text-foreground">{formatCurrency(summary.cartoes)}</div>
+              <p className="text-xs text-muted-foreground mt-2">Fatura atual</p>
             </AnimatedCardContent>
           </AnimatedCard>
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Transactions */}
-          <AnimatedCard delay={0.4}>
-            <AnimatedCardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <AnimatedCardTitle className="flex items-center gap-2">
-                    <Activity className="w-5 h-5" />
-                    Transações Recentes
-                  </AnimatedCardTitle>
-                  <AnimatedCardDescription>
-                    Suas últimas movimentações
-                  </AnimatedCardDescription>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => window.location.href = '/despesas'}
-                >
-                  Ver Todas
-                </Button>
-              </div>
-            </AnimatedCardHeader>
-            <AnimatedCardContent>
-              <div className="space-y-4">
-                {dashboardData.transacoesRecentes.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">
-                      Nenhuma transação encontrada
-                    </p>
-                    <Button 
-                      className="mt-4"
-                      onClick={() => window.location.href = '/despesas'}
-                    >
-                      Criar primeira transação
-                    </Button>
-                  </div>
-                ) : (
-                  dashboardData.transacoesRecentes.map((transacao, index) => (
-                    <motion.div
-                      key={transacao.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.5 + index * 0.1 }}
-                      className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center",
-                          transacao.tipo === 'RECEITA' ? 'bg-green-100 dark:bg-green-900' :
-                          transacao.tipo === 'DESPESA' ? 'bg-red-100 dark:bg-red-900' :
-                          'bg-blue-100 dark:bg-blue-900'
-                        )}>
-                          {transacao.tipo === 'RECEITA' ? (
-                            <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
-                          ) : transacao.tipo === 'DESPESA' ? (
-                            <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
-                          ) : (
-                            <Wallet className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {transacao.descricao}
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {formatDate(transacao.data)} • {transacao.carteiraOrigemNome || 'Carteira'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className={cn(
-                          "font-semibold",
-                          transacao.tipo === 'RECEITA' ? 'text-green-600 dark:text-green-400' :
-                          transacao.tipo === 'DESPESA' ? 'text-red-600 dark:text-red-400' :
-                          'text-blue-600 dark:text-blue-400'
-                        )}>
-                          {transacao.tipo === 'RECEITA' ? '+' : transacao.tipo === 'DESPESA' ? '-' : ''}
-                          {formatCurrency(transacao.valor)}
-                        </p>
-                        {transacao.categoriaNome && (
-                          <Badge variant="secondary" className="text-xs">
-                            {transacao.categoriaNome}
-                          </Badge>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-              </div>
-            </AnimatedCardContent>
-          </AnimatedCard>
-
-          {/* Wallets Overview */}
-          <AnimatedCard delay={0.5}>
-            <AnimatedCardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <AnimatedCardTitle className="flex items-center gap-2">
-                    <Wallet className="w-5 h-5" />
-                    Carteiras
-                  </AnimatedCardTitle>
-                  <AnimatedCardDescription>
-                    Saldos das suas contas
-                  </AnimatedCardDescription>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => window.location.href = '/carteiras'}
-                >
-                  Gerenciar
-                </Button>
-              </div>
-            </AnimatedCardHeader>
-            <AnimatedCardContent>
-              <div className="space-y-4">
-                {dashboardData.carteiras.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Wallet className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">
-                      Nenhuma carteira encontrada
-                    </p>
-                    <Button 
-                      className="mt-4"
-                      onClick={() => window.location.href = '/carteiras'}
-                    >
-                      Criar primeira carteira
-                    </Button>
-                  </div>
-                ) : (
-                  dashboardData.carteiras.map((carteira, index) => (
-                    <motion.div
-                      key={carteira.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.6 + index * 0.1 }}
-                      className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center",
-                          carteira.saldo >= 0 ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'
-                        )}>
-                          <Wallet className={cn(
-                            "w-5 h-5",
-                            carteira.saldo >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                          )} />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {carteira.nome}
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {carteira.tipo}
-                          </p>
-                        </div>
-                      </div>
-                      <p className={cn(
-                        "font-semibold",
-                        carteira.saldo >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                      )}>
-                        {formatCurrency(carteira.saldo)}
-                      </p>
-                    </motion.div>
-                  ))
-                )}
-              </div>
-            </AnimatedCardContent>
-          </AnimatedCard>
-
-          {/* Categories Overview */}
-          <AnimatedCard delay={0.6}>
-            <AnimatedCardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <AnimatedCardTitle className="flex items-center gap-2">
-                    <PieChart className="w-5 h-5" />
-                    Categorias
-                  </AnimatedCardTitle>
-                  <AnimatedCardDescription>
-                    Gastos por categoria
-                  </AnimatedCardDescription>
-                </div>
-                <Button variant="outline" size="sm">
-                  Ver Relatório
-                </Button>
-              </div>
-            </AnimatedCardHeader>
-            <AnimatedCardContent>
-              <div className="space-y-4">
-                {dashboardData.categorias.length === 0 ? (
-                  <div className="text-center py-8">
-                    <PieChart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">
-                      Nenhuma categoria encontrada
-                    </p>
-                  </div>
-                ) : (
-                  dashboardData.categorias.map((categoria, index) => (
-                    <motion.div
-                      key={categoria.id || categoria.nome}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.7 + index * 0.1 }}
-                      className="flex items-center justify-between"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {categoria.nome}
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {categoria.transacoes || 0} transação{(categoria.transacoes || 0) !== 1 ? 'ões' : ''}
-                          </p>
-                        </div>
-                      </div>
-                      <p className="font-semibold text-gray-900 dark:text-white">
-                        {formatCurrency(categoria.total || 0)}
-                      </p>
-                    </motion.div>
-                  ))
-                )}
-              </div>
-            </AnimatedCardContent>
-          </AnimatedCard>
-
-          {/* Quick Actions */}
-          <AnimatedCard delay={0.7}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Distribuição de Despesas (Gráfico de Pizza) */}
+          <AnimatedCard delay={0.5} className="lg:col-span-1">
             <AnimatedCardHeader>
               <AnimatedCardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5" />
-                Ações Rápidas
+                <PieChart className="w-5 h-5" />
+                Distribuição de Despesas
               </AnimatedCardTitle>
-              <AnimatedCardDescription>
-                Acesso rápido às principais funcionalidades
-              </AnimatedCardDescription>
+              <AnimatedCardDescription>Gastos por categoria este mês</AnimatedCardDescription>
             </AnimatedCardHeader>
             <AnimatedCardContent>
-              <div className="grid grid-cols-2 gap-3">
-                <Button 
-                  variant="outline" 
-                  className="h-20 flex flex-col gap-2"
-                  onClick={() => window.location.href = '/despesas?tipo=receita'}
-                >
-                  <Plus className="w-6 h-6" />
-                  <span className="text-sm">Nova Receita</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-20 flex flex-col gap-2"
-                  onClick={() => window.location.href = '/despesas?tipo=despesa'}
-                >
-                  <TrendingDown className="w-6 h-6" />
-                  <span className="text-sm">Nova Despesa</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-20 flex flex-col gap-2"
-                  onClick={() => window.location.href = '/carteiras'}
-                >
-                  <Wallet className="w-6 h-6" />
-                  <span className="text-sm">Carteiras</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-20 flex flex-col gap-2"
-                  onClick={() => window.location.href = '/dashboard'}
-                >
-                  <Calendar className="w-6 h-6" />
-                  <span className="text-sm">Relatórios</span>
-                </Button>
+              {despesasPorCategoria.length > 0 ? (
+                <ChartContainer config={{}} className="min-h-[300px]">
+                  <PieChartWithCustomizedLabel data={despesasPorCategoria} />
+                </ChartContainer>
+              ) : (
+                <div className="text-center py-8">
+                  <PieChart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400">Nenhuma despesa registrada para o gráfico.</p>
+                </div>
+              )}
+            </AnimatedCardContent>
+          </AnimatedCard>
+
+          {/* Evolução do Saldo (Gráfico de Linha) */}
+          <AnimatedCard delay={0.6} className="lg:col-span-2">
+            <AnimatedCardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <AnimatedCardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    Evolução do Saldo
+                  </AnimatedCardTitle>
+                  <AnimatedCardDescription>Seu saldo ao longo do tempo</AnimatedCardDescription>
+                </div>
+                {/* Filtro por Carteira (A ser implementado) */}
+                <Select value={selectedWallet} onValueChange={setSelectedWallet}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Todas as carteiras" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as carteiras</SelectItem>
+                    {carteiras.map((c) => (
+                      <SelectItem key={c.id} value={c.id.toString()}>
+                        {c.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+            </AnimatedCardHeader>
+            <AnimatedCardContent>
+              {evolucaoSaldo.length > 0 ? (
+                <ChartContainer config={{}} className="min-h-[300px]">
+                  <LineChartWithCustomTooltip data={evolucaoSaldo} />
+                </ChartContainer>
+              ) : (
+                <div className="text-center py-8">
+                  <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400">Dados insuficientes para o gráfico de evolução.</p>
+                </div>
+              )}
             </AnimatedCardContent>
           </AnimatedCard>
         </div>
+
+        <AnimatedCard delay={0.7} className="border-primary/20">
+          <AnimatedCardHeader>
+            <AnimatedCardTitle className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-primary" />
+              Ações Rápidas
+            </AnimatedCardTitle>
+            <AnimatedCardDescription>Acesso rápido às principais funcionalidades</AnimatedCardDescription>
+          </AnimatedCardHeader>
+          <AnimatedCardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Button
+                variant="outline"
+                className="flex flex-col h-auto py-4 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-300 bg-transparent"
+                onClick={() => (window.location.href = "/despesas")}
+              >
+                <Plus className="w-6 h-6 mb-2 text-primary" />
+                <span className="text-xs font-semibold">Nova Transação</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="flex flex-col h-auto py-4 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-300 bg-transparent"
+                onClick={() => (window.location.href = "/carteiras")}
+              >
+                <Wallet className="w-6 h-6 mb-2 text-primary" />
+                <span className="text-xs font-semibold">Carteiras</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="flex flex-col h-auto py-4 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-300 bg-transparent"
+                onClick={() => (window.location.href = "/cartao-credito")}
+              >
+                <CreditCard className="w-6 h-6 mb-2 text-primary" />
+                <span className="text-xs font-semibold">Cartão de Crédito</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="flex flex-col h-auto py-4 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-300 bg-transparent"
+                onClick={() => (window.location.href = "/despesas")}
+              >
+                <Calendar className="w-6 h-6 mb-2 text-primary" />
+                <span className="text-xs font-semibold">Transações</span>
+              </Button>
+            </div>
+          </AnimatedCardContent>
+        </AnimatedCard>
       </div>
     </Layout>
   )

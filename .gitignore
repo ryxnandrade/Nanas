@@ -1,10 +1,8 @@
-
 .DS_Store
 Thumbs.db
 
-
 nanas-frontend/node_modules/
-
+nanas-frontend/src/firebase.ts
 
 nanas-backend/HELP.md
 nanas-backend/target/

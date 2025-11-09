@@ -1,72 +1,72 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LayoutDashboard, 
-  Receipt, 
-  Wallet, 
-  X,
-  LogOut,
-  PiggyBank
-} from 'lucide-react';
-import { Button } from './ui/button';
-import { cn } from '../lib/utils';
-import { useAuth } from '../hooks/useAuth';
+"use client"
+
+import { Link, useLocation, useNavigate } from "react-router-dom"
+import { motion, AnimatePresence } from "framer-motion"
+import { LayoutDashboard, Receipt, Wallet, X, LogOut, PiggyBank, CreditCard } from "lucide-react"
+import { Button } from "./ui/button"
+import { cn } from "../lib/utils"
+import { useAuth } from "../hooks/useAuth"
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
 
-  const isDesktop = setIsOpen === undefined;
+  const isDesktop = setIsOpen === undefined
 
   const menuItems = [
     {
-      title: 'Dashboard',
+      title: "Dashboard",
       icon: LayoutDashboard,
-      path: '/dashboard',
+      path: "/dashboard",
     },
     {
-      title: 'Despesas',
+      title: "Transações",
       icon: Receipt,
-      path: '/despesas',
+      path: "/despesas",
     },
     {
-      title: 'Carteiras',
+      title: "Carteiras",
       icon: Wallet,
-      path: '/carteiras',
-    }
-  ];
+      path: "/carteiras",
+    },
+    {
+      title: "Cartão de Crédito",
+      icon: CreditCard,
+      path: "/cartao-credito",
+    },
+  ]
 
   const handleLogout = async () => {
     try {
-      await logout();
-      navigate('/login');
+      await logout()
+      navigate("/login")
     } catch (error) {
-      console.error("Falha ao redirecionar após logout:", error);
-      navigate('/login');
+      console.error("Falha ao redirecionar após logout:", error)
+      navigate("/login")
     }
-  };
+  }
 
   const sidebarVariants = {
     open: {
       x: 0,
-      transition: { type: "spring", stiffness: 300, damping: 30 }
+      transition: { type: "spring", stiffness: 300, damping: 30 },
     },
     closed: {
       x: "-100%",
-      transition: { type: "spring", stiffness: 300, damping: 30 }
-    }
-  };
+      transition: { type: "spring", stiffness: 300, damping: 30 },
+    },
+  }
 
   const overlayVariants = {
     open: { opacity: 1, display: "block" },
-    closed: { opacity: 0, transitionEnd: { display: "none" } }
-  };
+    closed: { opacity: 0, transitionEnd: { display: "none" } },
+  }
 
   const itemVariants = {
     open: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 300, damping: 30 } },
-    closed: { opacity: 0, x: -20 }
-  };
+    closed: { opacity: 0, x: -20 },
+  }
 
   return (
     <>
@@ -77,7 +77,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             animate="open"
             exit="closed"
             variants={overlayVariants}
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setIsOpen(false)}
           />
         )}
@@ -85,47 +85,53 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
       <motion.div
         initial={isDesktop ? false : "closed"}
-        animate={isDesktop ? "none" : (isOpen ? "open" : "closed")}
+        animate={isDesktop ? "none" : isOpen ? "open" : "closed"}
         variants={sidebarVariants}
         className={cn(
-          "fixed left-0 top-0 h-full w-72 bg-white dark:bg-gray-900 shadow-xl z-50",
-          "lg:static lg:h-screen lg:translate-x-0 lg:shadow-none lg:border-r lg:border-gray-200 dark:lg:border-gray-700"
+          "fixed left-0 top-0 h-full w-72 bg-sidebar shadow-2xl z-50",
+          "lg:static lg:h-screen lg:translate-x-0 lg:shadow-none lg:border-r lg:border-sidebar-border",
         )}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-sidebar-border">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-                <PiggyBank className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-br from-sidebar-primary to-sidebar-accent rounded-xl flex items-center justify-center shadow-lg">
+                <PiggyBank className="w-6 h-6 text-sidebar-primary-foreground" />
               </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                Nanas
-              </h1>
+              <div>
+                <h1 className="text-xl font-bold text-sidebar-foreground">Nanas</h1>
+                <p className="text-xs text-sidebar-accent opacity-80">Finanças</p>
+              </div>
             </div>
             {!isDesktop && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsOpen(false)}
-                className="lg:hidden"
+                className="lg:hidden text-sidebar-foreground hover:bg-sidebar-accent/20"
               >
                 <X className="w-5 h-5" />
               </Button>
             )}
           </div>
 
-          <div className="p-4 text-center border-b border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Bem-vindo(a),</p>
-            <p className="font-medium text-gray-800 dark:text-gray-200 truncate">
-              {user?.displayName || user?.email || 'Usuário'}
-            </p>
+          {/* User Info */}
+          <div className="p-4 border-b border-sidebar-border">
+            <div className="p-4 bg-sidebar-accent/10 rounded-lg border border-sidebar-accent/20">
+              <p className="text-xs text-sidebar-accent opacity-70">Bem-vindo(a),</p>
+              <p className="font-semibold text-sidebar-foreground truncate mt-1 text-sm">
+                {user?.displayName || user?.email || "Usuário"}
+              </p>
+            </div>
           </div>
 
+          {/* Navigation */}
           <nav className="flex-1 p-4 space-y-2">
             {menuItems.map((item, index) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
-              
+              const Icon = item.icon
+              const isActive = location.pathname === item.path
+
               return (
                 <motion.div
                   key={item.path}
@@ -138,48 +144,44 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                     to={item.path}
                     onClick={() => !isDesktop && setIsOpen(false)}
                     className={cn(
-                      "flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200",
-                      "hover:bg-gray-100 dark:hover:bg-gray-800",
-                      "group relative overflow-hidden",
-                      isActive && "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
+                      "flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300",
+                      "relative overflow-hidden group",
+                      isActive
+                        ? "bg-gradient-to-r from-sidebar-primary to-sidebar-accent text-sidebar-primary-foreground shadow-lg"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent/20",
                     )}
                   >
                     {isActive && (
                       <motion.div
                         layoutId="activeIndicator"
-                        className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-r"
+                        className="absolute left-0 top-0 bottom-0 w-1 bg-sidebar-primary-foreground"
                         initial={false}
                         transition={{ type: "spring", stiffness: 500, damping: 30 }}
                       />
                     )}
-                    
-                    <Icon 
+
+                    <Icon
                       className={cn(
-                        "w-5 h-5 transition-colors duration-200",
-                        isActive ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400",
-                        "group-hover:scale-110 transition-transform duration-200"
-                      )} 
-                    />
-                    <span 
-                      className={cn(
-                        "font-medium transition-colors duration-200",
-                        isActive ? "text-blue-600 dark:text-blue-400" : "text-gray-700 dark:text-gray-300"
+                        "w-5 h-5 transition-all duration-300 flex-shrink-0",
+                        isActive ? "scale-110" : "group-hover:scale-110",
                       )}
-                    >
-                      {item.title}
-                    </span>
-                    
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                      initial={false}
                     />
+                    <span className="font-medium text-sm">{item.title}</span>
+
+                    {!isActive && (
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-sidebar-primary/10 to-sidebar-accent/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                        initial={false}
+                      />
+                    )}
                   </Link>
                 </motion.div>
-              );
+              )
             })}
           </nav>
 
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          {/* Logout */}
+          <div className="p-4 border-t border-sidebar-border">
             <motion.div
               variants={itemVariants}
               initial={isDesktop ? false : "closed"}
@@ -188,7 +190,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             >
               <Button
                 variant="ghost"
-                className="w-full justify-start space-x-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                className="w-full justify-start space-x-3 text-red-500 hover:text-red-600 hover:bg-red-50/10 dark:hover:bg-red-900/20 transition-all duration-300"
                 onClick={handleLogout}
               >
                 <LogOut className="w-5 h-5" />
@@ -199,7 +201,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         </div>
       </motion.div>
     </>
-  );
-};
+  )
+}
 
-export default Sidebar;
+export default Sidebar

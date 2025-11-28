@@ -16,6 +16,6 @@ public interface TransacaoRepository extends JpaRepository<Transacao, Long> {
     List<Transacao> findByUsuarioAndCarteiraDestinoAndData(Usuario usuario, Carteira carteira, LocalDate data);
     List<Transacao> findByUsuarioAndDataBetween(Usuario usuario, LocalDate startDate, LocalDate endDate);
     List<Transacao> findByUsuarioAndDataBefore(Usuario usuario, LocalDate date);
+    List<Transacao> findByUsuarioIdAndCategoria_IdAndDataBetween(Long usuarioId, Long categoriaId, LocalDate dataInicio, LocalDate dataFim);
 }
     
-

@@ -57,7 +57,7 @@ public class DashboardService {
                 ));
 
 return despesasPorCategoria.entrySet().stream()
-        .map(entry -> new DespesaPorCategoriaDTO(entry.getKey(), entry.getValue())) 
+        .map(entry -> new DespesaPorCategoriaDTO(entry.getKey(), entry.getValue(), BigDecimal.ZERO)) 
         .sorted(Comparator.comparing(DespesaPorCategoriaDTO::getValor).reversed())
         .collect(Collectors.toList());
     }

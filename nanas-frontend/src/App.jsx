@@ -5,6 +5,10 @@ import Dashboard from './components/Dashboard'
 import Despesas from './components/Despesas'
 import Carteiras from './components/Carteiras'
 import CartaoCredito from './components/CartaoCredito'
+import Metas from './components/Metas'
+import TransacoesRecorrentes from './components/TransacoesRecorrentes'
+import Insights from './components/Insights'
+import RelatorioMensal from './components/RelatorioMensal'
 import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
 
@@ -32,6 +36,26 @@ function App() {
       <Route path="/cartao-credito" element={
         <ProtectedRoute>
           <CartaoCredito />
+        </ProtectedRoute>
+      } />
+      <Route path="/metas" element={
+        <ProtectedRoute>
+          <Metas />
+        </ProtectedRoute>
+      } />
+      <Route path="/transacoes-recorrentes" element={
+        <ProtectedRoute>
+          <TransacoesRecorrentes />
+        </ProtectedRoute>
+      } />
+      <Route path="/insights" element={
+        <ProtectedRoute>
+          <Insights />
+        </ProtectedRoute>
+      } />
+      <Route path="/relatorio-mensal" element={
+        <ProtectedRoute>
+          <RelatorioMensal />
         </ProtectedRoute>
       } />
     </Routes>

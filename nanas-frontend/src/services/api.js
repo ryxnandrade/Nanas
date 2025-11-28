@@ -30,9 +30,9 @@ class ApiService {
     const url = `${this.baseURL}${endpoint}`;
     const headers = { 'Content-Type': 'application/json', ...options.headers };
 
-    if (this.firebaseUid) {
-      headers['user_id'] = this.firebaseUid;
-    }
+      if (options.includeFirebaseUid && this.firebaseUid) {
+          headers['user_id'] = this.firebaseUid;
+      }
 
     const config = { ...options, headers };
 
@@ -68,36 +68,39 @@ class ApiService {
   }
 
   // Carteiras endpoints
- async getCarteiras() {
-    if (!this.firebaseUid) throw new Error("Firebase UID não definido.");
-    return this.request('/carteiras'); 
-  }
+async getCarteiras() {
+  return this.request('/carteiras', {
+    includeFirebaseUid: true
+  });
+}
 
+async createCarteira(carteiraData) {
+  return this.request('/carteiras', {
+    method: 'POST',
+    body: JSON.stringify(carteiraData),
+    includeFirebaseUid: true
+  });
+}
+
+async updateCarteira(id, carteiraData) {
+  return this.request(`/carteiras/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(carteiraData),
+    includeFirebaseUid: true
+  });
+}
+
+async deleteCarteira(id) {
+  return this.request(`/carteiras/${id}`, {
+    method: 'DELETE',
+    includeFirebaseUid: true
+  });
+}
+  
   async getTransacoes() {
     if (!this.firebaseUid) throw new Error("Firebase UID não definido.");
     return this.request('/transacoes');
   }
-
-  async createCarteira(carteiraData) {
-    return this.request('/carteiras', {
-      method: 'POST',
-      body: JSON.stringify(carteiraData),
-    });
-  }
-
-  async updateCarteira(id, carteiraData) {
-    return this.request(`/carteiras/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(carteiraData),
-    });
-  }
-
-  async deleteCarteira(id) {
-    return this.request(`/carteiras/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
   async transferirEntreCarteiras(transferenciaData) {
     return this.request('/carteiras/transferir', {
       method: 'POST',
@@ -107,61 +110,76 @@ class ApiService {
 
   // Categorias endpoints
   async getCategorias() {
-    return this.request('/categorias');
-  }
+  return this.request('/categorias', {
+    includeFirebaseUid: true
+  });
+}
 
-  async getCategoria(id) {
-    return this.request(`/categorias/${id}`);
-  }
+async getCategoria(id) {
+  return this.request(`/categorias/${id}`, {
+    includeFirebaseUid: true
+  });
+}
 
-  async createCategoria(categoriaData) {
-    return this.request('/categorias', {
-      method: 'POST',
-      body: JSON.stringify(categoriaData),
-    });
-  }
+async createCategoria(categoriaData) {
+  return this.request('/categorias', {
+    method: 'POST',
+    body: JSON.stringify(categoriaData),
+    includeFirebaseUid: true
+  });
+}
 
-  async updateCategoria(id, categoriaData) {
-    return this.request(`/categorias/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(categoriaData),
-    });
-  }
+async updateCategoria(id, categoriaData) {
+  return this.request(`/categorias/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(categoriaData),
+    includeFirebaseUid: true
+  });
+}
 
-  async deleteCategoria(id) {
-    return this.request(`/categorias/${id}`, {
-      method: 'DELETE',
-    });
-  }
+async deleteCategoria(id) {
+  return this.request(`/categorias/${id}`, {
+    method: 'DELETE',
+    includeFirebaseUid: true
+  });
+}
 
   // Transações endpoints
-  async getTransacoes() {
-    return this.request('/transacoes');
-  }
+ async getTransacoes() {
+  return this.request('/transacoes', {
+    includeFirebaseUid: true
+  });
+}
 
-  async getTransacao(id) {
-    return this.request(`/transacoes/${id}`);
-  }
+async getTransacao(id) {
+  return this.request(`/transacoes/${id}`, {
+    includeFirebaseUid: true
+  });
+}
 
-  async createTransacao(transacaoData) {
-    return this.request('/transacoes', {
-      method: 'POST',
-      body: JSON.stringify(transacaoData),
-    });
-  }
+async createTransacao(transacaoData) {
+  return this.request('/transacoes', {
+    method: 'POST',
+    body: JSON.stringify(transacaoData),
+    includeFirebaseUid: true
+  });
+}
 
-  async updateTransacao(id, transacaoData) {
-    return this.request(`/transacoes/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(transacaoData),
-    });
-  }
+async updateTransacao(id, transacaoData) {
+  return this.request(`/transacoes/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(transacaoData),
+    includeFirebaseUid: true
+  });
+}
 
-  async deleteTransacao(id) {
-    return this.request(`/transacoes/${id}`, {
-      method: 'DELETE',
-    });
-  }
+async deleteTransacao(id) {
+  return this.request(`/transacoes/${id}`, {
+    method: 'DELETE',
+    includeFirebaseUid: true
+  });
+}
+
 
   // Dashboard endpoints
  async getDashboardSummary() { 
@@ -179,11 +197,6 @@ async getEvolucaoSaldo() {
   return this.request(`/dashboard/evolucao-saldo?usuarioId=${this.userId}`);
 }
 // Cartão de Crédito endpoints
- async getCartoesCredito() {
-    if (!this.userId) throw new Error("ID numérico do usuário não definido.");
-    return this.request(`/cartoes-credito/usuario/${this.userId}`);
-  }
-
  async getCartoesCredito() {
     if (!this.userId) throw new Error("ID numérico do usuário não definido.");
     return this.request(`/cartoes-credito/usuario/${this.userId}`);
@@ -217,5 +230,122 @@ async createTransacaoCartaoCredito(cartaoId, transacaoData) {
     body: JSON.stringify(dataToSend),
   });
 }
+// -------- METAS ENDPOINTS --------
+
+    async getMetas() {
+        if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+        return this.request(`/metas?usuarioId=${this.userId}`);
+    }
+
+    async getMetasAtivas() {
+        if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+        return this.request(`/metas/ativas?usuarioId=${this.userId}`);
+    }
+
+    async getMeta(id) {
+        if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+        return this.request(`/metas/${id}?usuarioId=${this.userId}`);
+    }
+
+    async createMeta(metaData) {
+        if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+        return this.request(`/metas?usuarioId=${this.userId}`, {
+            method: "POST",
+            body: JSON.stringify(metaData),
+        });
+    }
+
+    async updateMeta(id, metaData) {
+        if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+        return this.request(`/metas/${id}?usuarioId=${this.userId}`, {
+            method: "PUT",
+            body: JSON.stringify(metaData),
+        });
+    }
+
+    async deleteMeta(id) {
+        if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+        return this.request(`/metas/${id}?usuarioId=${this.userId}`, {
+            method: "DELETE",
+        });
+    }
+
+    async updateStatusMeta(id, ativa) {
+        if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+        return this.request(`/metas/${id}/status?ativa=${ativa}&usuarioId=${this.userId}`, {
+            method: "PATCH",
+        });
+    }
+
+    // -------- TRANSACOES RECORRENTES --------
+async getTransacoesRecorrentes() {
+  if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+  return this.request(`/transacoes-recorrentes?usuarioId=${this.userId}`, {
+    includeFirebaseUid: true
+  });
+}
+
+async createTransacaoRecorrente(data) {
+  if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+  return this.request(`/transacoes-recorrentes?usuarioId=${this.userId}`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    includeFirebaseUid: true
+  });
+}
+
+async updateTransacaoRecorrente(id, data) {
+  if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+  return this.request(`/transacoes-recorrentes/${id}?usuarioId=${this.userId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    includeFirebaseUid: true
+  });
+}
+
+async deleteTransacaoRecorrente(id) {
+  if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+  return this.request(`/transacoes-recorrentes/${id}?usuarioId=${this.userId}`, {
+    method: 'DELETE',
+    includeFirebaseUid: true
+  });
+}
+
+async updateStatusTransacaoRecorrente(id, ativa) {
+  if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+  return this.request(`/transacoes-recorrentes/${id}/status?ativa=${ativa}&usuarioId=${this.userId}`, {
+    method: 'PATCH',
+    includeFirebaseUid: true
+  });
+}
+
+async executarTransacaoRecorrente(id) {
+  if (!this.userId) throw new Error("ID numérico do usuário não definido.");
+  return this.request(`/transacoes-recorrentes/${id}/executar?usuarioId=${this.userId}`, {
+    method: 'POST',
+    includeFirebaseUid: true
+  });
+}
+
+async getInsights() {
+  return this.request('/insights', {
+    includeFirebaseUid: true
+  });
+}
+
+// -------- RELATÓRIO MENSAL --------
+async getRelatorioMensal(ano, mes) {
+  return this.request(`/relatorios/mensal?ano=${ano}&mes=${mes}`, {
+    includeFirebaseUid: true
+  });
+}
+
+async getRelatorioMensalAtual() {
+  return this.request(`/relatorios/mensal/atual`, {
+    includeFirebaseUid: true
+  });
+}
+
+
 }
 export default new ApiService();

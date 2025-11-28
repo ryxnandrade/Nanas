@@ -2,7 +2,7 @@
 
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
-import { LayoutDashboard, Receipt, Wallet, X, LogOut, PiggyBank, CreditCard } from "lucide-react"
+import { LayoutDashboard, Receipt, Wallet, X, LogOut, PiggyBank, CreditCard, Target, Repeat, Lightbulb, FileText } from "lucide-react"
 import { Button } from "./ui/button"
 import { cn } from "../lib/utils"
 import { useAuth } from "../hooks/useAuth"
@@ -34,6 +34,26 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       title: "Cartão de Crédito",
       icon: CreditCard,
       path: "/cartao-credito",
+    },
+    {
+      title: "Metas",
+      icon: Target,
+      path: "/metas",
+    },
+    {
+      title: "Transações Recorrentes",
+      icon: Repeat,
+      path: "/transacoes-recorrentes",
+    },
+    {
+      title: "Insights",
+      icon: Lightbulb,
+      path: "/insights",
+    },
+    {
+      title: "Relatório Mensal",
+      icon: FileText,
+      path: "/relatorio-mensal",
     },
   ]
 

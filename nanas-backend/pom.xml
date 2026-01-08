@@ -67,6 +67,12 @@
             <version>${org.mapstruct.version}</version>
         </dependency>
 
+        <!-- Spring Boot Actuator para health check -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- Dependências de Teste (sem alterações) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

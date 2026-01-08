@@ -23,16 +23,22 @@ export const AuthProvider = ({ children }) => {
       if (firebaseUser) {
         try {
           const idToken = await firebaseUser.getIdToken()
+
+          // Armazena o token para usar no header Authorization
+          apiService.setIdToken(idToken)
+
           const backendUser = await apiService.login(idToken, firebaseUser.displayName || firebaseUser.email)
-          
+
           setUser(firebaseUser)
           setUserData(backendUser)
         } catch (error) {
           console.error('Erro ao verificar usuário no backend:', error)
+          apiService.clearUserData()
           setUser(null)
           setUserData(null)
         }
       } else {
+        apiService.clearUserData()
         setUser(null)
         setUserData(null)
       }

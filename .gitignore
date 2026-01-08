@@ -1,15 +1,43 @@
+# ===========================================
+# Sistema Operacional
+# ===========================================
 .DS_Store
 Thumbs.db
 
+# ===========================================
+# Frontend - Node/Vite
+# ===========================================
 nanas-frontend/node_modules/
-nanas-frontend/src/firebase.ts
+nanas-frontend/dist/
+nanas-frontend/.env
+nanas-frontend/.env.local
+nanas-frontend/.env.*.local
 
-nanas-backend/HELP.md
+# Firebase Config (NUNCA COMMITAR!)
+nanas-frontend/src/firebase.ts
+nanas-frontend/src/firebase.js
+
+# ===========================================
+# Backend - Spring Boot / Maven
+# ===========================================
 nanas-backend/target/
 nanas-backend/.mvn/
-nanas-backend/firebase-adminsdk.json
+nanas-backend/HELP.md
+nanas-backend/mvn_build_log.txt
 
+# Firebase Admin SDK (NUNCA COMMITAR!)
+nanas-backend/src/main/resources/firebase-adminsdk.json
+nanas-backend/src/main/resources/firebase-adminsdk*.json
+nanas-backend/src/main/resources/*.json
+!nanas-backend/src/main/resources/application*.properties
 
+# Logs
+*.log
+logs/
+
+# ===========================================
+# IDE e Editores
+# ===========================================
 .apt_generated
 .classpath
 .factorypath
@@ -28,3 +56,12 @@ nanas-backend/firebase-adminsdk.json
 /.nb-gradle/
 build/
 .vscode/
+
+# ===========================================
+# Variáveis de Ambiente
+# ===========================================
+.env
+.env.local
+.env.*.local
+*.env
+

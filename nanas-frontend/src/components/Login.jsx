@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { signInWithEmailAndPassword } from "firebase/auth"
 import { auth } from "../firebase"
@@ -9,6 +7,7 @@ import { Label } from "@/components/ui/label.jsx"
 import { Card, CardContent } from "@/components/ui/card.jsx"
 import { Eye, EyeOff, Wallet, ArrowRight } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import apiService from "../services/api"
 
 export default function Login() {
   const [email, setEmail] = useState("")
@@ -26,27 +25,28 @@ export default function Login() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password)
       const user = userCredential.user
-
       const idToken = await user.getIdToken()
 
-      const response = await fetch("http://localhost:8080/api/auth/verify-token", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ idToken }),
-      })
+      // Usar o serviço de API configurado com variáveis de ambiente
+      apiService.setIdToken(idToken)
+      const userData = await apiService.login(idToken, user.displayName || user.email)
 
-      if (response.ok) {
-        const userData = await response.json()
-        console.log("Usuário verificado no backend:", userData)
+      if (userData) {
         navigate("/dashboard")
       } else {
-        console.error("Erro ao verificar usuário no backend:", response.statusText)
-        navigate("/dashboard")
+        setError("Erro ao sincronizar dados do usuário.")
       }
     } catch (error) {
-      setError("Email ou senha incorretos. Tente novamente.")
+      // Melhor tratamento de erro - não navegar quando há erro!
+      if (error.code === "auth/invalid-credential" || error.code === "auth/wrong-password") {
+        setError("Email ou senha incorretos. Tente novamente.")
+      } else if (error.code === "auth/user-not-found") {
+        setError("Usuário não encontrado. Verifique o email.")
+      } else if (error.code === "auth/too-many-requests") {
+        setError("Muitas tentativas. Aguarde alguns minutos.")
+      } else {
+        setError("Erro ao fazer login. Tente novamente.")
+      }
       console.error("Erro no login:", error)
     } finally {
       setIsLoading(false)

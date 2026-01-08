@@ -16,6 +16,6 @@ public class Usuario extends BaseEntity {
     private Long id;
     private String email;
     private String nome;
-    private String firebaseUid; 
+    @Column(name = "firebase_uid", unique = true)
+    private String firebaseUid;
 }
-

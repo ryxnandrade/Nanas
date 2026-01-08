@@ -18,7 +18,7 @@ public class AuthService {
     private final FirebaseAuth firebaseAuth;
 
     @Autowired
-    public AuthService(UsuarioRepository usuarioRepository, FirebaseAuth firebaseAuth ) {
+    public AuthService(UsuarioRepository usuarioRepository, FirebaseAuth firebaseAuth) {
         this.usuarioRepository = usuarioRepository;
         this.firebaseAuth = firebaseAuth;
     }
@@ -29,6 +29,7 @@ public class AuthService {
         String uid = decodedToken.getUid();
 
         return usuarioRepository.findByFirebaseUid(uid)
+                .stream().findFirst()
                 .orElseGet(() -> {
                     Usuario novoUsuario = new Usuario();
                     novoUsuario.setFirebaseUid(uid);
@@ -40,6 +41,8 @@ public class AuthService {
 
     public Usuario findByFirebaseUid(String firebaseUid) {
         return usuarioRepository.findByFirebaseUid(firebaseUid)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário com UID " + firebaseUid + " não encontrado no banco de dados local."));
+                .stream().findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Usuário com UID " + firebaseUid + " não encontrado no banco de dados local."));
     }
 }

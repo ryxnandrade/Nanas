@@ -23,6 +23,9 @@ public class SecurityConfig {
 
     private final FirebaseAuthenticationFilter firebaseAuthenticationFilter;
 
+    @org.springframework.beans.factory.annotation.Value("${cors.allowed-origins:http://localhost:5173}")
+    private String allowedOrigins;
+
     public SecurityConfig(FirebaseAuthenticationFilter firebaseAuthenticationFilter) {
         this.firebaseAuthenticationFilter = firebaseAuthenticationFilter;
     }
@@ -57,14 +60,14 @@ public class SecurityConfig {
 
     /**
      * Configuração CORS para permitir requisições do frontend.
-     * Permite localhost:5173 em desenvolvimento.
+     * Usa variável de ambiente para definir origens permitidas em produção.
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Permite localhost para desenvolvimento
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
+        // Permite origens da variável de ambiente
+        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
 
         // Métodos HTTP permitidos
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));

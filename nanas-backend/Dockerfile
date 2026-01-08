@@ -16,7 +16,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Etapa de execução
-FROM openjdk:11-jre-slim
+FROM eclipse-temurin:11-jre
 WORKDIR /app
 
 # Cria usuário não-root para segurança
